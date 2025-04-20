@@ -15,6 +15,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
+
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Optional;
@@ -34,6 +37,13 @@ public class UserController {
             @PageableDefault(page = 0 , size = 10, sort = "userId", direction = Sort.Direction.ASC) Pageable pageable) {
 
         Page<UserModel> users = userService.findAll(spec, pageable);
+
+        if (!users.isEmpty()) {
+            for(UserModel user: users.toList()){
+                user.add(linkTo(methodOn(UserController.class).getUser(user.getUserId())).withSelfRel());
+            }
+        }
+
         return ResponseEntity.status(HttpStatus.OK).body(users);
     }
 
