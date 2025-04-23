@@ -5,6 +5,7 @@ import com.ead.course.dtos.CourseDTO;
 import com.ead.course.models.CourseModel;
 import com.ead.course.services.CourseService;
 import com.ead.course.specifications.SpecificationsTemplate;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -22,6 +23,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+@Log4j2
 @RestController
 @RequestMapping("/courses")
 @CrossOrigin(origins = "*", maxAge = 3600)
@@ -80,9 +82,20 @@ public class CourseController {
     @GetMapping
     public ResponseEntity<Page<CourseModel>> getAllCourses(
             SpecificationsTemplate.CourseSpec spec,
-            @PageableDefault(page = 0 , size = 10, sort = "courseId", direction = Sort.Direction.ASC) Pageable pageable
+            @PageableDefault(page = 0 , size = 10, sort = "courseId", direction = Sort.Direction.ASC) Pageable pageable,
+            @RequestParam(required = false) UUID userId
     ) {
-        return ResponseEntity.status(HttpStatus.OK).body(courseService.findAll(spec, pageable));
+        log.debug("GET all courses with parameters: pageable: {} spec: {} userID: {}" , pageable, spec, userId);
+
+        Page<CourseModel> allCourses = null;
+
+        if(userId != null) {
+            allCourses = courseService.findAll(SpecificationsTemplate.courseUserId(userId).and(spec), pageable);
+        }else {
+            allCourses = courseService.findAll(spec, pageable);
+        }
+
+        return ResponseEntity.status(HttpStatus.OK).body(allCourses);
     }
 
     @GetMapping("/{courseId}")

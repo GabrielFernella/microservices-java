@@ -5,6 +5,7 @@ import com.ead.authuser.models.UserModel;
 import com.ead.authuser.services.UserService;
 import com.ead.authuser.specifications.SpecificationTemplate;
 import com.fasterxml.jackson.annotation.JsonView;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -23,6 +24,7 @@ import java.time.ZoneId;
 import java.util.Optional;
 import java.util.UUID;
 
+@Log4j2
 @RestController
 @CrossOrigin(origins = "*", maxAge = 3600)
 @RequestMapping("/users")
@@ -34,9 +36,16 @@ public class UserController {
     @GetMapping
     public ResponseEntity<Page<UserModel>> getAllUsers(
             SpecificationTemplate.UserSpec spec,
-            @PageableDefault(page = 0 , size = 10, sort = "userId", direction = Sort.Direction.ASC) Pageable pageable) {
+            @PageableDefault(page = 0 , size = 10, sort = "userId", direction = Sort.Direction.ASC) Pageable pageable,
+            @RequestParam(required = false) UUID courseId
+    ) {
 
-        Page<UserModel> users = userService.findAll(spec, pageable);
+        Page<UserModel> users = null;
+        if(courseId != null){
+            users = userService.findAll(SpecificationTemplate.userCourseId(courseId).and(spec) ,pageable);
+        }else {
+            users = userService.findAll(spec, pageable);
+        }
 
         if (!users.isEmpty()) {
             for(UserModel user: users.toList()){
@@ -59,18 +68,23 @@ public class UserController {
     @DeleteMapping("/{userId}")
     public ResponseEntity<Object> deleteUser(@PathVariable(value = "userId") UUID userId) {
 
+        log.debug("DELETE deleteUser userId received: {}", userId);
+
         Optional<UserModel> user = userService.findById(userId);
         if (!user.isPresent()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
         }
 
         userService.deleteById(userId);
+        log.debug("DELETE deleteUser userModel: {}", userId);
+        log.info("User deleted successfully userId: {}", userId);
         return ResponseEntity.status(HttpStatus.OK).body("User deleted successfully");
     }
 
     @PutMapping("/{userId}")
     public ResponseEntity<Object> updateUser(@PathVariable(value = "userId") UUID userId, @RequestBody @Validated(UserDTO.UserView.UserPut.class) @JsonView(UserDTO.UserView.UserPut.class) UserDTO userDTO) {
 
+        log.debug("PUT updateUser userDTO received: {}", userDTO.toString());
         Optional<UserModel> user = userService.findById(userId);
         if (!user.isPresent()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
@@ -83,6 +97,8 @@ public class UserController {
         userModel.setLastUpdateDate(LocalDateTime.now(ZoneId.of("UTC")));
 
         userService.save(userModel);
+        log.debug("PUT updateUser userId saved: {}", userModel.getUserId());
+        log.info("User saved successfully userId: {}", userModel.getUserId());
         return ResponseEntity.status(HttpStatus.OK).body(userModel);
     }
 
@@ -95,7 +111,8 @@ public class UserController {
         }
 
         if (!user.get().getPassword().equals(userDTO.getOldPassword())) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body("Error: Old password is the same as new password");
+            log.warn("Mismatched old password userId: {}", userDTO.getUserId());
+            return ResponseEntity.status(HttpStatus.CONFLICT).body("Error: Mismatched old password!");
         }
 
         var userModel = user.get();
