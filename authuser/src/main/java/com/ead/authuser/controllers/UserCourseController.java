@@ -28,10 +28,7 @@ public class UserCourseController {
             @PathVariable(value = "userId") UUID userId,
             @PageableDefault(page = 0 , size = 10, sort = "courseId", direction = Sort.Direction.ASC) Pageable pageable
     ){
-
         var response = userClient.getAllCoursesByUser(userId, pageable);
-
-
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 }
