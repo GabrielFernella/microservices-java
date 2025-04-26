@@ -21,7 +21,7 @@ import java.util.UUID;
 
 @Log4j2
 @Component
-public class CourseClient {
+public class AuthUserClient {
 
     @Autowired
     RestTemplate restTemplate;
@@ -57,5 +57,15 @@ public class CourseClient {
         return new PageImpl<>(searchResult);
     }
 
+
+    public ResponseEntity<UserDTO> getOneUserById(UUID userId) {
+
+        String url = REQUEST_URL_AUTHUSER + "/users/" + userId;
+
+        log.debug("Request URL: {}", url);
+
+        return restTemplate.exchange(url, HttpMethod.GET, null, UserDTO.class);
+
+    }
 
 }
