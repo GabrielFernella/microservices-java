@@ -10,4 +10,5 @@ public interface UserCourseService {
     boolean existsByUserAndCourseId(UserModel userModel, @NotNull UUID courseId);
 
     UserCourseModel save(UserCourseModel buildUserCourseModel);
+
 }

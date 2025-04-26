@@ -6,6 +6,7 @@ import com.ead.authuser.repositories.UserCourseRepository;
 import com.ead.authuser.services.UserCourseService;
 import org.springframework.stereotype.Service;
 
+import javax.transaction.Transactional;
 import java.util.UUID;
 
 @Service
